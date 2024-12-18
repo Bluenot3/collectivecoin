@@ -1,0 +1,583 @@
+<html><base href="https://collectivecoin.example.com">
+<head>
+    <meta charset="UTF-8">
+    <title>Collective Coin (CC) Launch Guide</title>
+    <style>
+        :root {
+            --main-bg-color: #1d1d1d;
+            --secondary-bg-color: #333;
+            --header-bg-color: #222;
+            --text-color: #f0f0f0;
+            --primary-color: #ff6b6b;
+            --secondary-color: #feca57;
+            --tertiary-color: #1dd1a1;
+            --quaternary-color: #5f27cd;
+            --gradient-colors: conic-gradient(var(--primary-color), var(--secondary-color), var(--tertiary-color), var(--quaternary-color), var(--primary-color));
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--main-bg-color), var(--secondary-bg-color));
+            color: var(--text-color);
+            overflow-x: hidden;
+        }
+        header {
+            background-color: var(--header-bg-color);
+            padding: 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        header h1 {
+            font-size: 3em;
+            margin: 0;
+            z-index: 1;
+            position: relative;
+            animation: fadeInDown 1s ease-out;
+        }
+        header:after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: var(--gradient-colors);
+            animation: rotate 10s linear infinite;
+            z-index: 0;
+            mix-blend-mode: overlay;
+        }
+        header:before {
+            content: '';
+            position: absolute;
+            top: 3px;
+            left: 3px;
+            right: 3px;
+            bottom: 3px;
+            background-color: var(--header-bg-color);
+            z-index: 0;
+        }
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        nav {
+            background-color: var(--secondary-bg-color);
+            padding: 10px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            backdrop-filter: blur(5px);
+        }
+        nav a {
+            color: var(--text-color);
+            margin: 0 15px;
+            text-decoration: none;
+            font-size: 1.2em;
+            position: relative;
+        }
+        nav a:after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -5px;
+            width: 0%;
+            height: 2px;
+            background-color: var(--primary-color);
+            transition: width 0.3s;
+        }
+        nav a:hover:after {
+            width: 100%;
+        }
+        section {
+            padding: 50px;
+            max-width: 1200px;
+            margin: auto;
+            animation: fadeInUp 1s ease-out;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        h2 {
+            font-size: 2.5em;
+            margin-top: 0;
+            position: relative;
+            display: inline-block;
+            padding-bottom: 10px;
+            color: var(--primary-color);
+        }
+        h2:after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            width: 50px;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+        }
+        .phase {
+            margin-bottom: 50px;
+        }
+        .phase-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+        .code-block {
+            background-color: #2e2e2e;
+            padding: 20px;
+            border-radius: 10px;
+            overflow-x: auto;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+        .code-block:before, .code-block:after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+        .code-block:before {
+            left: 10px;
+            background-color: red;
+        }
+        .code-block:after {
+            left: 30px;
+            background-color: yellow;
+        }
+        pre {
+            margin: 0;
+            color: #0ff;
+        }
+        code {
+            font-family: 'Source Code Pro', monospace;
+            font-size: 0.9em;
+        }
+        .btn {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            padding: 15px 30px;
+            color: #222;
+            font-size: 1em;
+            cursor: pointer;
+            border-radius: 30px;
+            margin-top: 20px;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 10px var(--primary-color);
+        }
+        .timeline {
+            position: relative;
+            margin: 50px 0;
+        }
+        .timeline:before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: #444;
+        }
+        .timeline-entry {
+            position: relative;
+            width: 50%;
+            padding: 20px 40px;
+            box-sizing: border-box;
+        }
+        .timeline-entry:nth-child(odd) {
+            left: 0;
+            text-align: right;
+            animation: slideInLeft 1s ease-out;
+        }
+        .timeline-entry:nth-child(even) {
+            left: 50%;
+            animation: slideInRight 1s ease-out;
+        }
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .timeline-entry:before {
+            content: '';
+            position: absolute;
+            top: 30px;
+            right: -20px;
+            width: 15px;
+            height: 15px;
+            background-color: var(--primary-color);
+            border-radius: 50%;
+            border: 4px solid var(--header-bg-color);
+        }
+        .timeline-entry:nth-child(even):before {
+            left: -20px;
+        }
+        .platform-logos {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 50px;
+            margin: 50px 0;
+        }
+        .platform-logos svg {
+            width: 100px;
+            height: 100px;
+            transition: transform 0.3s, filter 0.3s;
+            filter: drop-shadow(0 0 5px var(--primary-color));
+        }
+        .platform-logos svg:hover {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 15px var(--secondary-color));
+        }
+        footer {
+            background-color: var(--header-bg-color);
+            padding: 30px;
+            text-align: center;
+            color: #777;
+        }
+        footer a {
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+        @media (max-width: 768px) {
+            .phase-grid {
+                grid-template-columns: 1fr;
+            }
+            .timeline-entry {
+                width: 100%;
+                left: 0 !important;
+                text-align: left !important;
+            }
+            .timeline:before {
+                left: 20px;
+            }
+            .timeline-entry:before {
+                left: -20px !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>Collective Coin (CC) Launch Guide</h1>
+    </header>
+
+    <nav>
+        <a href="#phase1">Phase 1</a>
+        <a href="#phase2">Phase 2</a>
+        <a href="#phase3">Phase 3</a>
+        <a href="#phase4">Phase 4</a>
+        <a href="#phase5">Phase 5</a>
+    </nav>
+
+    <section id="introduction">
+        <h2>Introduction</h2>
+        <p>
+            Welcome to the Step-by-Step Guide to launch <strong>Collective Coin (CC)</strong> on the <strong>NEAR Protocol</strong>. This guide provides detailed phases and strategies to achieve a market cap of <strong>$500k and beyond</strong> by leveraging platforms like <a href="https://meme.cooking">meme.cooking</a> and <a href="https://grass.fun">grass.fun</a>.
+        </p>
+        <button class="btn" onclick="scrollToPhase('phase1')">Get Started</button>
+    </section>
+
+    <section id="phase1" class="phase">
+        <h2>Phase 1: Token Design and Smart Contract Development</h2>
+        <div class="phase-grid">
+            <div>
+                <h3>1. Define Token Specifications</h3>
+                <ul>
+                    <li><strong>Token Name:</strong> Collective Coin</li>
+                    <li><strong>Ticker:</strong> CC</li>
+                    <li><strong>Blockchain:</strong> NEAR Protocol</li>
+                    <li><strong>Total Supply:</strong> 10,000,000,000 CC (fixed)</li>
+                    <li><strong>Decimals:</strong> 18</li>
+                    <li><strong>Initial Price:</strong> $0.0005 per CC</li>
+                </ul>
+                <h3>2. Development Environment Setup</h3>
+                <p>Install NEAR CLI:</p>
+                <div class="code-block">
+                    <pre><code>npm install -g near-cli
+near login</code></pre>
+                </div>
+                <p>Install Rust and NEAR SDK:</p>
+                <div class="code-block">
+                    <pre><code>curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+rustup target add wasm32-unknown-unknown
+cargo install near-sdk</code></pre>
+                </div>
+                <p>Create a new Rust project for the CC token contract:</p>
+                <div class="code-block">
+                    <pre><code>cargo new cc_token --lib
+cd cc_token</code></pre>
+                </div>
+            </div>
+            <div>
+                <h3>3. Develop Smart Contract</h3>
+                <p><strong>Key Features:</strong></p>
+                <ul>
+                    <li><strong>Mintable Token:</strong> Fixed supply minted to the deployer (DAO treasury).</li>
+                    <li><strong>Revenue Sharing:</strong> Automatic redirection of revenues from platforms like meme.cooking and grass.fun to the DAO treasury.</li>
+                    <li><strong>Burn Mechanism:</strong> 1% of all transaction fees are burned to maintain token scarcity.</li>
+                </ul>
+                <h3>Token Contract Code</h3>
+                <div class="code-block">
+                    <pre><code>use near_sdk::borsh::{self, BorshDeserialize, BorshSerialize};
+use near_sdk::{env, near_bindgen, AccountId, Balance, PanicOnDefault, Promise};
+
+#[near_bindgen]
+#[derive(BorshDeserialize, BorshSerialize, PanicOnDefault)]
+pub struct CollectiveCoin {
+    pub total_supply: Balance,
+    pub balances: std::collections::HashMap&lt;AccountId, Balance&gt;,
+    pub owner: AccountId,
+}
+
+#[near_bindgen]
+impl CollectiveCoin {
+    #[init]
+    pub fn new(owner_id: AccountId, total_supply: Balance) -> Self {
+        let mut balances = std::collections::HashMap::new();
+        balances.insert(owner_id.clone(), total_supply);
+
+        Self {
+            total_supply,
+            balances,
+            owner: owner_id,
+        }
+    }
+
+    pub fn transfer(&mut self, to: AccountId, amount: Balance) {
+        let sender = env::predecessor_account_id();
+        let sender_balance = self.balances.get(&amp;sender).expect("No balance available");
+        assert!(sender_balance &gt;= amount, "Insufficient balance");
+
+        let fee = amount / 100; // 1% transaction fee
+        let recipient_amount = amount - fee;
+
+        self.balances.insert(sender.clone(), sender_balance - amount);
+
+        let recipient_balance = self.balances.get(&amp;to).unwrap_or(&amp;0);
+        self.balances.insert(to.clone(), recipient_balance + recipient_amount);
+
+        // Burn 1% fee
+        self.total_supply -= fee;
+
+        env::log(format!("Transfer: {} -&gt; {} ({} CC, {} burned)", sender, to, recipient_amount, fee).as_bytes());
+    }
+
+    pub fn revenue_from_platforms(&mut self, platform: AccountId, amount: Balance) {
+        self.transfer(self.owner.clone(), amount);
+        env::log(format!("Revenue received: {} CC from {}", amount, platform).as_bytes());
+    }
+}</code></pre>
+                </div>
+                <p>Compile and Deploy Contract:</p>
+                <div class="code-block">
+                    <pre><code>near deploy --accountId &lt;contract_account_id&gt; --wasmFile &lt;path_to_wasm_file&gt;</code></pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="phase2" class="phase">
+        <h2>Phase 2: Leverage Platforms and Astro DAO</h2>
+        <div class="phase-grid">
+            <div>
+                <h3>1. Integration with Platforms</h3>
+                <h4>Meme.cooking:</h4>
+                <ul>
+                    <li><strong>Use Case:</strong> Users pay for meme competitions, promotions, and features with CC.</li>
+                    <li><strong>Revenue Split:</strong></li>
+                    <ul>
+                        <li>80%: Meme creator.</li>
+                        <li>20%: Automatically sent to the CC DAO treasury.</li>
+                    </ul>
+                </ul>
+                <h4>Grass.fun:</h4>
+                <ul>
+                    <li><strong>Use Case:</strong> CC can be staked to farm meme-related NFTs or access exclusive meme farming competitions.</li>
+                    <li><strong>Revenue Mechanism:</strong> Staking fees (e.g., 0.5% of staked CC) are sent to the DAO treasury.</li>
+                </ul>
+            </div>
+            <div>
+                <h3>2. Create a DAO for Governance</h3>
+                <ul>
+                    <li>Use <a href="https://astrodao.com">Astro DAO</a> to set up the CC governance system.</li>
+                    <li><strong>DAO Roles:</strong></li>
+                    <ul>
+                        <li><strong>Core Council:</strong> Approves treasury spending and ecosystem grants.</li>
+                        <li><strong>Token Holders:</strong> Vote on proposals using CC tokens.</li>
+                    </ul>
+                    <li><strong>Treasury Revenue Sources:</strong></li>
+                    <ul>
+                        <li>Transaction fees.</li>
+                        <li>Platform revenues (meme.cooking and grass.fun).</li>
+                        <li>Staking fees from DAO-related activities.</li>
+                    </ul>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="phase3" class="phase">
+        <h2>Phase 3: Token Launch</h2>
+        <div class="phase-grid">
+            <div>
+                <h3>1. Initial Token Distribution</h3>
+                <h4>Public Sale on Ref Finance:</h4>
+                <ul>
+                    <li>Launch CC on <a href="https://app.ref.finance">Ref Finance</a> (NEAR DEX).</li>
+                    <li><strong>Pair:</strong> CC/NEAR liquidity pool.</li>
+                    <li><strong>Initial Liquidity:</strong> $10,000 worth of CC and NEAR tokens.</li>
+                </ul>
+                <h4>Private Sale:</h4>
+                <ul>
+                    <li>Distribute <strong>10% of supply</strong> to strategic investors.</li>
+                    <li><strong>Price:</strong> $0.0004 per CC.</li>
+                    <li><strong>Goal:</strong> Raise $40,000.</li>
+                </ul>
+            </div>
+            <div>
+                <h3>2. Launch Campaign</h3>
+                <ul>
+                    <li><strong>Social Media Presence:</strong></li>
+                    <ul>
+                        <li>Launch Twitter, Telegram, and Discord channels.</li>
+                        <li>Create engaging content showcasing CC’s utility on platforms like meme.cooking.</li>
+                        <li>Highlight deflationary mechanics to attract investors.</li>
+                    </ul>
+                    <li><strong>Meme Competitions:</strong></li>
+                    <ul>
+                        <li>Host a meme contest on meme.cooking with CC rewards.</li>
+                        <li>Encourage community participation to drive token use.</li>
+                    </ul>
+                    <li><strong>AMA Events:</strong></li>
+                    <ul>
+                        <li>Host Ask Me Anything (AMA) sessions with meme creators and the CC core team.</li>
+                    </ul>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="phase4" class="phase">
+        <h2>Phase 4: Achieve $500k Market Cap</h2>
+        <div class="phase-grid">
+            <div>
+                <h3>1. Build Liquidity and Volume</h3>
+                <ul>
+                    <li>Ensure $10,000 liquidity on Ref Finance.</li>
+                    <li>Encourage trading by incentivizing liquidity providers with CC rewards.</li>
+                </ul>
+                <h3>2. Grow Revenue Streams</h3>
+                <ul>
+                    <li><strong>Meme.cooking Revenues:</strong> Target $10,000 monthly revenue from meme fees.</li>
+                    <li><strong>Grass.fun Staking:</strong> Generate $5,000/month in staking fees.</li>
+                    <li><strong>Transaction Fees:</strong> Aim for $20,000/month in transaction fee revenue.</li>
+                </ul>
+            </div>
+            <div>
+                <h3>3. Promote Ecosystem Utility</h3>
+                <ul>
+                    <li><strong>Expand Platform Partnerships:</strong> Onboard additional platforms that can utilize CC for payments or rewards.</li>
+                    <li><strong>Integrate NEAR Blob Storage:</strong> Enable users to pay for blob storage with CC.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section id="phase5" class="phase">
+        <h2>Phase 5: Beyond $500k Market Cap</h2>
+        <div class="phase-grid">
+            <div>
+                <h3>1. Expand Utility</h3>
+                <ul>
+                    <li>Use <a href="https://rainbowbridge.app">Rainbow Bridge</a> to bring CC liquidity to Ethereum and Binance Smart Chain.</li>
+                    <li>Partner with NFT platforms to accept CC as payment.</li>
+                </ul>
+            </div>
+            <div>
+                <h3>2. Continuous Growth</h3>
+                <ul>
+                    <li>Host recurring meme competitions and NFT farming events.</li>
+                    <li>Launch staking programs with higher rewards to increase CC adoption.</li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <section class="timeline">
+        <div class="timeline-entry">
+            <h3>Phase 1</h3>
+            <p>Token Design & Smart Contract Development</p>
+        </div>
+        <div class="timeline-entry">
+            <h3>Phase 2</h3>
+            <p>Leverage Platforms & Astro DAO</p>
+        </div>
+        <div class="timeline-entry">
+            <h3>Phase 3</h3>
+            <p>Token Launch</p>
+        </div>
+        <div class="timeline-entry">
+            <h3>Phase 4</h3>
+            <p>Achieve $500k Market Cap</p>
+        </div>
+        <div class="timeline-entry">
+            <h3>Phase 5</h3>
+            <p>Beyond $500k Market Cap</p>
+        </div>
+    </section>
+
+    <section class="platform-logos">
+        <a href="https://near.org">
+            <svg viewBox="0 0 100 100">
+                <!-- NEAR Protocol Logo SVG -->
+                <polygon points="10,10 90,50 10,90" fill="#ffffff"/>
+            </svg>
+        </a>
+        <a href="https://meme.cooking">
+            <svg viewBox="0 0 100 100">
+                <!-- Meme.Cooking Logo SVG -->
+                <circle cx="50" cy="50" r="40" fill="#feca57"/>
+            </svg>
+        </a>
+        <a href="https://grass.fun">
+            <svg viewBox="0 0 100 100">
+                <!-- Grass.Fun Logo SVG -->
+                <rect x="20" y="20" width="60" height="60" fill="#1dd1a1"/>
+            </svg>
+        </a>
+    </section>
+
+    <footer>
+        <p>&copy; 2023 Collective Coin. All rights reserved.</p>
+        <p>Join us on <a href="https://twitter.com/collectivecoin" style="color:var(--primary-color);">Twitter</a>, <a href="https://t.me/collectivecoin" style="color:var(--secondary-color);">Telegram</a>, and <a href="https://discord.gg/collectivecoin" style="color:var(--tertiary-color);">Discord</a>.</p>
+    </footer>
+
+    <script>
+        function scrollToPhase(phaseId) {
+            document.getElementById(phaseId).scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+
+</body>
+</html>

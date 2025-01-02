@@ -1,0 +1,2232 @@
+<html><head><base href="." target="_blank">
+  <meta charset="UTF-8">
+  <title>Country Builder - Create Your Nation</title>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      background: #1a1a2e;
+      color: #fff;
+    }
+
+    #container {
+      display: flex;
+      height: 100vh;
+      width: 100%;
+    }
+
+    #map {
+      flex: 1;
+      height: 100%;
+      min-height: 400px;
+      z-index: 1;
+    }
+
+    #control-panel {
+      width: 300px;
+      background: #16213e;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .country-form {
+      margin-bottom: 20px;
+    }
+
+    input, select, button {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      border: none;
+      border-radius: 4px;
+    }
+
+    button {
+      background: #4CAF50;
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    .news-feed {
+      margin-top: 20px;
+      padding: 10px;
+      background: #1f4068;
+      border-radius: 4px;
+      height: 400px;
+      overflow-y: auto;
+    }
+
+    .news-article {
+      background: rgba(255,255,255,0.1);
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .news-article:hover {
+      background: rgba(255,255,255,0.2);
+      transform: translateY(-2px);
+    }
+
+    .news-article h4 {
+      margin: 0 0 10px 0;
+      color: #4CAF50;
+    }
+
+    .news-article .timestamp {
+      font-size: 0.8em;
+      color: #888;
+    }
+
+    .news-article .preview {
+      margin: 8px 0;
+      color: #ddd;
+    }
+
+    .news-article.critical {
+      background: rgba(255,68,68,0.2);
+      border-left: 4px solid #ff4444;
+    }
+
+    .news-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #16213e;
+      padding: 25px;
+      border-radius: 12px;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 2000;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    .news-modal h2 {
+      color: #4CAF50;
+      margin-bottom: 15px;
+    }
+
+    .news-modal .article-content {
+      line-height: 1.6;
+      color: #fff;
+    }
+
+    .news-modal .close-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 24px;
+      cursor: pointer;
+      padding: 5px;
+      width: auto;
+    }
+
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 1999;
+    }
+
+    .news-item {
+      padding: 5px;
+      margin: 5px 0;
+      border-bottom: 1px solid #2d5a8c;
+    }
+
+    .news-item.critical {
+      background: #ff4444;
+      color: white;
+      font-weight: bold;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 5px 0;
+    }
+
+    .alert {
+      background: #ff6b6b;
+      color: white;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+      display: none;
+    }
+
+    .stats {
+      background: #1f4068;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+
+    .stat-item {
+      background: rgba(0,0,0,0.3);
+      padding: 8px 12px;
+      border-radius: 6px;
+      margin: 8px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    #world-tension {
+      position: fixed;
+      top: 10px;
+      right: 320px;
+      background: rgba(0, 0, 0, 0.8);
+      padding: 15px;
+      border-radius: 8px;
+      z-index: 1000;
+      border: 2px solid rgba(255,255,255,0.2);
+      min-width: 200px;
+    }
+
+    .tension-meter {
+      width: 100%;
+      height: 30px;
+      background: rgba(0,0,0,0.5);
+      border-radius: 15px;
+      border: 2px solid rgba(255,255,255,0.2);
+      overflow: hidden;
+      margin-top: 10px;
+      position: relative;
+    }
+
+    .tension-fill {
+      height: 100%;
+      background: linear-gradient(90deg, 
+        rgb(0, 255, 0) 0%,
+        rgb(255, 255, 0) 50%,
+        rgb(255, 0, 0) 100%
+      );
+      transition: width 0.8s ease-in-out;
+      position: relative;
+    }
+
+    .tension-fill.critical {
+      animation: pulse-tension 1.5s infinite;
+    }
+
+    .tension-label {
+      position: absolute;
+      width: 100%;
+      text-align: center;
+      top: 50%;
+      transform: translateY(-50%);
+      color: white;
+      font-weight: bold;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+      z-index: 1;
+    }
+
+    @keyframes pulse-tension {
+      0% { opacity: 1; }
+      50% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+
+    .tension-status {
+      font-size: 0.9em;
+      color: #fff;
+      text-align: center;
+      margin-top: 8px;
+      padding: 4px;
+      border-radius: 4px;
+    }
+
+    .tension-status.peaceful { background: rgba(0, 255, 0, 0.3); }
+    .tension-status.uneasy { background: rgba(255, 255, 0, 0.3); }
+    .tension-status.dangerous { background: rgba(255, 165, 0, 0.3); }
+    .tension-status.critical { background: rgba(255, 0, 0, 0.3); }
+
+    #country-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    #country-actions button {
+      margin: 0;
+      padding: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+      font-size: 0.9em;
+      letter-spacing: 0.5px;
+      background: #2d5a8c;
+    }
+
+    #country-actions button:hover {
+      background: #1f4068;
+    }
+
+    @keyframes pulse {
+      0% { background: #ff4444; }
+      50% { background: #aa0000; }
+      100% { background: #ff4444; }
+    }
+    
+    .location-point {
+      background: #ff4444;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+      box-shadow: 0 0 0 2px rgba(0,0,0,0.2);
+      animation: pulse-point 2s infinite;
+    }
+
+    @keyframes pulse-point {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.2); }
+      100% { transform: scale(1); }
+    }
+
+    #location-instructions {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.9);
+      color: white;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      z-index: 1000;
+      border: 2px solid #4CAF50;
+      max-width: 400px;
+    }
+
+    .rank-display {
+      background: #1f4068;
+      padding: 10px;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+
+    .rank-progress {
+      width: 100%;
+      height: 20px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 5px;
+    }
+
+    .rank-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #4CAF50, #8BC34A);
+      transition: width 0.3s;
+    }
+
+    .news-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .breaking-news {
+      background: #ff4444;
+      color: white;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-weight: bold;
+      animation: pulse 2s infinite;
+    }
+
+    .news-footer {
+      margin-top: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .reactions button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 5px 10px;
+      margin-right: 10px;
+      transition: transform 0.2s;
+    }
+
+    .reactions button:hover {
+      transform: scale(1.1);
+    }
+
+    .rank-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .next-rank {
+      font-size: 0.9em;
+      color: #888;
+    }
+
+    .rank-benefits {
+      margin-top: 15px;
+      padding: 10px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 4px;
+    }
+
+    .rank-benefits ul {
+      list-style: none;
+      padding-left: 10px;
+    }
+
+    .rank-benefits li {
+      margin: 5px 0;
+      font-size: 0.9em;
+    }
+
+    .rank-progress {
+      height: 20px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+      border: 2px solid rgba(255,255,255,0.1);
+    }
+
+    .rank-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #4CAF50, #8BC34A);
+      transition: width 0.5s;
+    }
+
+    .war-event {
+      background: rgba(255, 0, 0, 0.1);
+      border-left: 4px solid #ff0000;
+      margin: 10px 0;
+      padding: 10px;
+    }
+
+    .peace-event {
+      background: rgba(0, 255, 0, 0.1);
+      border-left: 4px solid #00ff00;
+      margin: 10px 0;
+      padding: 10px;
+    }
+
+    .remix-notice {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 15px;
+      border-radius: 8px;
+      z-index: 1000;
+      text-align: center;
+      border: 2px solid #4CAF50;
+      max-width: 400px;
+      animation: fadeInOut 5s forwards;
+    }
+
+    @keyframes fadeInOut {
+      0% { opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    
+    .resource-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      margin: 10px 0;
+    }
+
+    .resource-item {
+      background: rgba(255,255,255,0.1);
+      padding: 10px;
+      border-radius: 8px;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 5px;
+      align-items: center;
+    }
+
+    .resource-item .icon {
+      font-size: 1.5em;
+      grid-row: span 2;
+    }
+
+    .resource-item .trend {
+      font-size: 0.8em;
+      color: #4CAF50;
+    }
+
+    .unit-management {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .unit-type {
+      background: rgba(255,255,255,0.1);
+      padding: 10px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .unit-type button {
+      margin-left: auto;
+      padding: 5px 15px;
+    }
+
+    .achievements-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;  
+    }
+
+    .achievement-item {
+      background: rgba(0,0,0,0.3);
+      padding: 10px;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+    }
+
+    .achievement-item.locked {
+      filter: grayscale(1);
+      opacity: 0.5;
+    }
+
+    .research-tree {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+    }
+
+    .research-item {
+      background: rgba(0,0,0,0.3);
+      padding: 15px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .research-item:hover {
+      background: rgba(0,0,0,0.5);
+    }
+
+    .research-item.active {
+      border: 2px solid #4CAF50;
+    }
+
+    .research-item.completed {
+      background: rgba(76,175,80,0.3);
+    }
+
+    .culture-stats {
+      display: grid;
+      gap: 10px;
+    }
+
+    .culture-item {
+      background: rgba(0,0,0,0.3);
+      padding: 10px;
+      border-radius: 8px;
+    }
+
+    .progress-bar {
+      height: 10px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 5px;
+      margin-top: 5px;
+      overflow: hidden;
+    }
+
+    .progress-bar div {
+      height: 100%;
+      background: #4CAF50;
+      transition: width 0.3s;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="map"></div>
+    <div id="control-panel">
+      <div class="country-form">
+        <h2>Create Your Country</h2>
+        <input type="text" id="country-name" placeholder="Country Name">
+        <select id="government-type">
+          <option value="democracy">Democracy</option>
+          <option value="dictatorship">Dictatorship</option>
+          <option value="monarchy">Monarchy</option>
+          <option value="theocracy">Theocracy</option>
+          <option value="communist">Communist State</option>
+          <option value="oligarchy">Oligarchy</option>
+        </select>
+        <div id="map-instructions" style="display: none;">
+          Click on the map to place your country
+        </div>
+        <button id="create-country-btn" onclick="createCountry()">Establish Nation</button>
+        
+        <div id="country-actions" style="display: none;">
+          <h3>Country Actions</h3>
+          <button onclick="declareWar()">Declare War</button>
+          <button onclick="formAlliance()">Form Alliance</button>
+          <button onclick="reformEmpire()">Reform Empire</button>
+          <button onclick="developNukes()">Develop Nuclear Weapons</button>
+          <button onclick="sendAid()">Send Foreign Aid</button>
+        </div>
+      </div>
+      
+      <div class="alert" id="alert-box"></div>
+      
+      <div class="stats">
+        <h3>Country Statistics</h3>
+        <div class="stat-item">
+          <span>Population:</span>
+          <span id="population">0M</span>
+        </div>
+        <div class="stat-item">
+          <span>GDP:</span>
+          <span id="gdp">&#x24;0B</span>
+        </div>
+        <div class="stat-item">
+          <span>Military Power:</span>
+          <span id="military">0</span>
+        </div>
+      </div>
+
+      <div class="news-feed" id="news-feed">
+        <h3>World News</h3>
+      </div>
+      
+      <div id="resources-panel">
+        <h3>National Resources</h3>
+        <div class="resource-grid">
+          <div class="resource-item">
+            <span class="icon">🌾</span>
+            <span class="label">Food</span>
+            <span class="value" id="food-value">0</span>
+            <div class="trend" id="food-trend">+0/day</div>
+          </div>
+          <div class="resource-item"> 
+            <span class="icon">⛏️</span>
+            <span class="label">Minerals</span>
+            <span class="value" id="minerals-value">0</span>
+            <div class="trend" id="minerals-trend">+0/day</div>
+          </div>
+          <div class="resource-item">
+            <span class="icon">⚡</span>
+            <span class="label">Energy</span>
+            <span class="value" id="energy-value">0</span>
+            <div class="trend" id="energy-trend">+0/day</div>
+          </div>
+          <div class="resource-item">
+            <span class="icon">💰</span>
+            <span class="label">Trade</span>
+            <span class="value" id="trade-value">0</span>
+            <div class="trend" id="trade-trend">+0/day</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="achievements-panel">
+        <h3>Achievements</h3>
+        <div class="achievements-grid"></div>
+      </div>
+
+      <div id="research-panel">
+        <h3>Research & Development</h3>
+        <div class="research-tree"></div>
+      </div>
+
+      <div id="culture-panel">
+        <h3>Culture & Society</h3>
+        <div class="culture-stats">
+          <div class="culture-item">
+            <span class="label">Happiness</span>
+            <div class="progress-bar" id="happiness-bar"></div>
+          </div>
+          <div class="culture-item">
+            <span class="label">Education</span>
+            <div class="progress-bar" id="education-bar"></div>
+          </div>
+          <div class="culture-item">
+            <span class="label">Healthcare</span>
+            <div class="progress-bar" id="healthcare-bar"></div>
+          </div>
+        </div>
+      </div>
+
+      <div id="military-details">
+        <h3>Military Overview</h3>
+        <div class="unit-management">
+          <div class="unit-type">
+            <span class="icon">⚔️</span>
+            <span>Infantry</span>
+            <button onclick="trainUnits('infantry')">Train</button>
+          </div>
+          <div class="unit-type">
+            <span class="icon">🛡️</span>
+            <span>Armor</span>
+            <button onclick="trainUnits('armor')">Train</button>
+          </div>
+          <div class="unit-type">
+            <span class="icon">✈️</span>
+            <span>Air Force</span>
+            <button onclick="trainUnits('air')">Train</button>
+          </div>
+          <div class="unit-type">
+            <span class="icon">⚓</span>
+            <span>Navy</span>
+            <button onclick="trainUnits('navy')">Train</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="world-tension">
+    World Tension
+    <div class="tension-meter">
+      <div class="tension-label">0%</div>
+      <div class="tension-fill" style="width: 0%"></div>
+    </div>
+    <div class="tension-status peaceful">World at peace</div>
+  </div>
+
+  <div id="remix-notice" class="remix-notice">
+    Please note: V29 is the current version (Previous version V25 received 7 remixes). Let&apos;s maintain the stability of this simulation by not creating too many remixes. Thank you for your understanding! &#x1f30d;
+  </div>
+  <script>
+    let map;
+    let userCountry;
+    let worldTension = 0;
+    let relationships = {};
+    let warStatus = {};
+    let ideologies = {
+      "United States": "democratic",
+      "Russia": "authoritarian",
+      "China": "communist",
+      "Canada": "democratic",
+      "Mexico": "democratic",
+      "Germany": "democratic",
+      "Turkey": "authoritarian",
+      "France": "democratic",
+      "United Kingdom": "democratic",
+      "Japan": "democratic",
+      "South Korea": "democratic",
+      "North Korea": "authoritarian"
+    };
+    let drawingMode = false;
+    let userCountryPolygon = [];
+    let userCountryLayer = null;
+    let militaryActions = {
+      buildArmy: 0,
+      developNukes: false,
+      allies: [],
+      enemies: []
+    };
+    let countryTraits = {
+      stability: 100,
+      influence: 50,
+      technology: 50
+    };
+    let newsArticles = [];
+    const newsTemplates = {
+      war: (country1, country2) => ({
+        title: `WAR DECLARED: ${country1} launches military campaign against ${country2}`,
+        content: `In a shocking development, ${country1} has officially declared war on ${country2}. Military analysts suggest this conflict could have far-reaching implications for regional stability. Intelligence reports indicate military mobilization along the borders, with both nations placing their armed forces on high alert. International diplomatic efforts are underway to prevent further escalation of the conflict.`,
+        type: 'critical'
+      }),
+      nuclear: (country1, country2) => ({
+        title: `NUCLEAR CRISIS: ${country1} initiates nuclear strike against ${country2}`,
+        content: `EMERGENCY ALERT: In an unprecedented escalation, ${country1} has launched nuclear weapons targeting ${country2}. Global leaders are convening emergency sessions as the world stands on the brink of nuclear conflict. Civil defense protocols are being activated worldwide, and international organizations are calling for immediate de-escalation. This marks one of the most serious nuclear threats since the Cold War.`,
+        type: 'critical'
+      }),
+      empire: (country, empireName) => ({
+        title: `EMPIRE RESTORED: ${country} reforms as ${empireName}`,
+        content: `In a dramatic shift in global politics, ${country} has officially reformed into the ${empireName}. This transformation signals a return to imperial ambitions and has sent shockwaves through the international community. Neighboring nations are expressing concern over this development, while historical analysts draw parallels to past imperial regimes. The move has already begun to reshape regional alliances and power dynamics.`,
+        type: 'critical'
+      }),
+      diplomatic: (country1, country2, action) => ({
+        title: `Diplomatic Crisis: ${country1} ${action} with ${country2}`,
+        content: `A diplomatic situation has emerged between ${country1} and ${country2}. The international community watches closely as these developments unfold. Experts suggest this could mark a significant shift in regional relations.`,
+        type: 'normal'
+      }),
+      warEnd: (country1, country2, victor) => ({
+        title: `WAR ENDS: ${victor} Emerges Victorious in War with ${victor === country1 ? country2 : country1}`,
+        content: `The war between ${country1} and ${country2} has concluded with ${victor}'s victory. Peace terms are being negotiated as troops withdraw from occupied territories.`,
+        type: 'critical'
+      }),
+      peaceOffer: (country1, country2) => ({
+        title: `PEACE PROPOSED: ${country1} Offers Peace Terms to ${country2}`,
+        content: `In a diplomatic breakthrough, ${country1} has extended peace terms to ${country2}. The international community watches closely as negotiations begin.`,
+        type: 'critical'
+      }),
+      territoryOccupied: (occupier, occupied, territory) => ({
+        title: `TERRITORY LOST: ${occupier} Occupies ${territory} from ${occupied}`,
+        content: `In a significant military victory, ${occupier} has successfully occupied ${territory} from ${occupied}, shifting the balance of power in the ongoing conflict.`,
+        type: 'critical'
+      }),
+      allyDefeated: (ally, defeatedBy) => ({
+        title: `ALLY DEFEATED: ${ally} Falls to ${defeatedBy}`,
+        content: `In a major blow to their alliance network, ${ally} has been defeated by ${defeatedBy}. This development is likely to have significant implications for regional power dynamics.`,
+        type: 'critical'
+      })
+    };
+    const countryRanks = {
+      SETTLEMENT: {
+        threshold: 0,
+        name: "Settlement",
+        icon: "🏘️",
+        benefits: ["Basic territory management", "Local governance"]
+      },
+      TRIBE: {
+        threshold: 20,
+        name: "Tribe",
+        icon: "⛺",
+        benefits: ["Cultural influence", "Resource gathering"]
+      },
+      KINGDOM: {
+        threshold: 40,
+        name: "Kingdom",
+        icon: "👑",
+        benefits: ["Royal authority", "Tax collection", "Military recruitment"]
+      },
+      EMPIRE: {
+        threshold: 60,
+        name: "Empire",
+        icon: "🏛️",
+        benefits: ["Multiple territories", "Advanced military", "Trade routes"]
+      },
+      EMPIRE_STATE: {
+        threshold: 80,
+        name: "Empire State",
+        icon: "🌆",
+        benefits: ["Global influence", "Advanced technology", "Economic dominance"]
+      },
+      SUPREME_COUNTRY: {
+        threshold: 90,
+        name: "Supreme Country",
+        icon: "⚜️",
+        benefits: ["Superpower status", "Nuclear capability", "Global leadership"]
+      },
+      WORLD_POWER: {
+        threshold: 100,
+        name: "World Power",
+        icon: "🌍",
+        benefits: ["Ultimate authority", "Unmatched military", "Economic supremacy"]
+      }
+    };
+    let countryPower = {
+      influence: 0,
+      military: 0,
+      territory: 0,
+      allies: 0
+    };
+    let tensionEffects = {
+      peaceful: {
+        range: [0, 25],
+        description: "World at peace",
+        eventChance: 0.05
+      },
+      uneasy: {
+        range: [26, 50],
+        description: "Growing tensions",
+        eventChance: 0.15
+      },
+      dangerous: {
+        range: [51, 75],
+        description: "Dangerous situation",
+        eventChance: 0.25
+      },
+      critical: {
+        range: [76, 100],
+        description: "On the brink of war",
+        eventChance: 0.4
+      }
+    };
+    const warEvents = {
+      wars: {},
+      peaceOffers: {},
+      occupiedTerritories: {}
+    };
+
+    const gameState = {
+      resources: {
+        food: 0,
+        minerals: 0, 
+        energy: 0,
+        trade: 0,
+        trends: {
+          food: 0,
+          minerals: 0,
+          energy: 0, 
+          trade: 0
+        }
+      },
+      military: {
+        infantry: 0,
+        armor: 0,
+        air: 0, 
+        navy: 0,
+        training: {}
+      },
+      research: {
+        points: 0,
+        active: null,
+        completed: [],
+        queue: []
+      },
+      culture: {
+        happiness: 50,
+        education: 30,
+        healthcare: 40
+      },
+      achievements: {
+        unlocked: []
+      },
+      time: {
+        day: 0,
+        month: 1,
+        year: 2024
+      }
+    };
+
+    const researchTechs = {
+      agriculture: {
+        name: "Advanced Agriculture",
+        cost: 100,
+        effects: {food: 1.2},
+        requires: []
+      },
+      mining: {
+        name: "Improved Mining",
+        cost: 150,
+        effects: {minerals: 1.2},
+        requires: []
+      },
+      energyTech: {
+        name: "Sustainable Energy",
+        cost: 200,
+        effects: {energy: 1.3},
+        requires: []
+      },
+      trade: {
+        name: "Global Trade Network",
+        cost: 300,
+        effects: {trade: 1.5},
+        requires: ["agriculture", "mining"]
+      }
+    };
+
+    const achievements = {
+      firstCity: {
+        name: "Urban Pioneer",
+        description: "Build your first city",
+        icon: "🏙️"
+      },
+      militaryMight: {
+        name: "Military Superpower",
+        description: "Achieve 1000 military strength",
+        icon: "⚔️"
+      },
+      peacekeeper: {
+        name: "Global Peacekeeper",
+        description: "Maintain peace for 50 years",
+        icon: "🕊️"
+      }
+    };
+
+    function updateRank() {
+      try {
+        const rankElement = document.getElementById('current-rank');
+        const rankBarElement = document.querySelector('.rank-bar');
+        if (!rankElement || !rankBarElement) {
+          console.warn('Rank elements not found, skipping rank update');
+          return;
+        }
+        const powerScore = Math.min(100, Math.max(0, countryPower.influence * 0.3 + countryPower.military * 0.3 + countryPower.territory * 0.2 + countryPower.allies * 20));
+        let currentRank = countryRanks.SETTLEMENT;
+        for (const [rank, data] of Object.entries(countryRanks)) {
+          if (powerScore >= data.threshold) {
+            currentRank = data;
+          } else {
+            break;
+          }
+        }
+        rankElement.textContent = currentRank.name;
+        rankBarElement.style.width = `${powerScore}%`;
+      } catch (error) {
+        console.error('Error updating rank:', error);
+      }
+    }
+
+    function createCountry() {
+      const name = document.getElementById('country-name').value;
+      const government = document.getElementById('government-type').value;
+      if (!name) {
+        showAlert('Please enter a country name');
+        return;
+      }
+      map.off('click');
+      const existingInstructions = document.getElementById('location-instructions');
+      if (existingInstructions) {
+        existingInstructions.remove();
+      }
+      const locationInstructions = document.createElement('div');
+      locationInstructions.id = 'location-instructions';
+      locationInstructions.innerHTML = `
+        <h3>Choose Your Country's Location</h3>
+        <p>Click on the map to place your country's capital city.</p>
+        <p>Choose carefully - your location will affect your relationships with neighboring countries!</p>
+      `;
+      document.body.appendChild(locationInstructions);
+      document.getElementById('create-country-btn').style.display = 'none';
+      document.getElementById('map-instructions').style.display = 'block';
+      const locationHandler = function (e) {
+        try {
+          const marker = L.marker(e.latlng, {
+            icon: L.divIcon({
+              className: 'location-point',
+              iconSize: [15, 15]
+            })
+          }).addTo(map);
+          const locationInst = document.getElementById('location-instructions');
+          if (locationInst) {
+            locationInst.remove();
+          }
+          const statsDiv = document.querySelector('.stats');
+          if (statsDiv) {
+            const rankDisplay = document.createElement('div');
+            rankDisplay.className = 'rank-display';
+            rankDisplay.innerHTML = showRankProgress(rankDisplay);
+            statsDiv.appendChild(rankDisplay);
+          }
+          countryPower = {
+            influence: countryTraits.influence,
+            military: Math.floor(Math.random() * 100),
+            territory: userCountryPolygon.length * 5,
+            allies: 0
+          };
+          updateRank();
+          const drawingInst = document.createElement('div');
+          drawingInst.className = 'drawing-instructions';
+          drawingInst.innerHTML = `
+            <h3>Draw Your Country's Borders</h3>
+            <p>Click at least 3 points on the map to define your country's territory</p>
+            <p>Start from your capital and draw your borders!</p>
+          `;
+          const controlPanel = document.getElementById('control-panel');
+          if (!controlPanel) {
+            throw new Error('Control panel not found');
+          }
+          controlPanel.insertAdjacentElement('afterbegin', drawingInst);
+          drawingMode = true;
+          userCountryPolygon = [[e.latlng.lng, e.latlng.lat]];
+          map.off('click', locationHandler);
+          map.on('click', onMapClick);
+          map.on('mousemove', function (e) {
+            if (drawingMode && userCountryPolygon.length > 0) {
+              if (userCountryLayer) {
+                map.removeLayer(userCountryLayer);
+              }
+              const tempPolygon = [...userCountryPolygon, [e.latlng.lng, e.latlng.lat]];
+              userCountryLayer = L.polyline(tempPolygon.map(p => [p[1], p[0]]), {
+                color: '#ff4444',
+                dashArray: '5, 10'
+              }).addTo(map);
+            }
+          });
+        } catch (error) {
+          console.error('Error in location handler:', error);
+          showAlert('Error placing country location. Please try again.');
+        }
+      };
+      map.on('click', locationHandler);
+    }
+
+    function onMapClick(e) {
+      if (!drawingMode) return;
+      userCountryPolygon.push([e.latlng.lng, e.latlng.lat]);
+      if (userCountryLayer) {
+        map.removeLayer(userCountryLayer);
+      }
+      const tempPolygon = {
+        type: "Feature",
+        geometry: {
+          type: "LineString",
+          coordinates: userCountryPolygon
+        }
+      };
+      userCountryLayer = L.geoJSON(tempPolygon, {
+        style: {
+          color: '#ff4444',
+          weight: 2,
+          opacity: 0.8
+        }
+      }).addTo(map);
+      if (userCountryPolygon.length >= 3) {
+        userCountryPolygon.push(userCountryPolygon[0]);
+        const name = document.getElementById('country-name').value;
+        const government = document.getElementById('government-type').value;
+        const countryFeature = {
+          type: "Feature",
+          properties: {
+            name: name,
+            government: government,
+            population: Math.random() * 100,
+            gdp: Math.random() * 1000,
+            military: Math.floor(Math.random() * 100),
+            isUserCountry: true
+          },
+          geometry: {
+            type: "Polygon",
+            coordinates: [userCountryPolygon]
+          }
+        };
+        if (userCountryLayer) {
+          map.removeLayer(userCountryLayer);
+        }
+        userCountryLayer = L.geoJSON(countryFeature, {
+          style: {
+            color: '#ff4444',
+            weight: 2,
+            opacity: 0.8,
+            fillOpacity: 0.3
+          }
+        }).addTo(map);
+        updateStats(countryFeature.properties);
+        document.getElementById('country-actions').style.display = 'block';
+        map.off('click', onMapClick);
+        map.off('mousemove');
+        drawingMode = false;
+        map.getContainer().classList.remove('drawing-mode');
+        const drawingInst = document.querySelector('.drawing-instructions');
+        if (drawingInst) drawingInst.remove();
+        relationships[name] = {};
+        Object.keys(relationships).forEach(country => {
+          if (country !== name) {
+            relationships[name][country] = 0;
+            relationships[country][name] = 0;
+          }
+        });
+        addNewsItem(`${name} has been established as a new ${government}!`);
+      }
+    }
+
+    function declareWar() {
+      const countries = Object.keys(relationships).filter(c => c !== document.getElementById('country-name').value);
+      const warDialog = document.createElement('div');
+      warDialog.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #16213e;
+        padding: 20px;
+        border-radius: 8px;
+        z-index: 1000;
+        border: 2px solid #4CAF50;
+        min-width: 300px;
+      `;
+      warDialog.innerHTML = `
+        <h3>Declare War</h3>
+        <p>Choose your target:</p>
+        <select id="war-target" style="width: 100%; margin: 10px 0;">
+          ${countries.map(c => `<option value="${c}">${c}</option>`).join('')}
+        </select>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+          <button onclick="confirmWar()" style="flex: 1">Declare War</button>
+          <button onclick="this.parentElement.parentElement.remove()" style="flex: 1">Cancel</button>
+        </div>
+      `;
+      document.body.appendChild(warDialog);
+    }
+
+    function confirmWar() {
+      const target = document.getElementById('war-target').value;
+      const userCountry = document.getElementById('country-name').value;
+      declareWarBetween(userCountry, target);
+      document.querySelector('div[style*="position: fixed"]').remove();
+      militaryActions.buildArmy += 20;
+      militaryActions.enemies.push(target);
+      militaryActions.allies = militaryActions.allies.filter(a => a !== target);
+      countryTraits.stability -= 20;
+      updateTraits();
+    }
+
+    function formAlliance() {
+      const countries = Object.keys(relationships).filter(c => c !== document.getElementById('country-name').value);
+      const allianceDialog = document.createElement('div');
+      allianceDialog.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #16213e;
+        padding: 20px;
+        border-radius: 8px;
+        z-index: 1000;
+        border: 2px solid #4CAF50;
+        min-width: 300px;
+      `;
+      allianceDialog.innerHTML = `
+        <h3>Form Alliance</h3>
+        <p>Choose your ally:</p>
+        <select id="alliance-target" style="width: 100%; margin: 10px 0;">
+          ${countries.map(c => `<option value="${c}">${c}</option>`).join('')}
+        </select>
+        <div style="display: flex; gap: 10px; margin-top: 15px;">
+          <button onclick="confirmAlliance()" style="flex: 1">Form Alliance</button>
+          <button onclick="this.parentElement.parentElement.remove()" style="flex: 1">Cancel</button>
+        </div>
+      `;
+      document.body.appendChild(allianceDialog);
+    }
+
+    function confirmAlliance() {
+      const target = document.getElementById('alliance-target').value;
+      const userCountry = document.getElementById('country-name').value;
+      relationships[userCountry][target] += 50;
+      relationships[target][userCountry] += 50;
+      militaryActions.allies.push(target);
+      countryPower.allies += 1;
+      addNewsItem(`${userCountry} has formed an alliance with ${target}!`);
+      document.querySelector('div[style*="position: fixed"]').remove();
+      updateRank();
+    }
+
+    function reformEmpire() {
+      const userCountry = document.getElementById('country-name').value;
+      const rankElement = document.getElementById('current-rank');
+      if (!rankElement) {
+        showAlert("Error checking country rank");
+        return;
+      }
+      const currentRank = rankElement.textContent;
+      if (["Settlement", "Tribe"].includes(currentRank)) {
+        showAlert("Your nation must be at least a Kingdom to form an empire!");
+        return;
+      }
+      const empireName = prompt('Enter your empire name:');
+      if (empireName) {
+        restoreEmpire(userCountry, empireName);
+        countryPower.influence += 20;
+        countryPower.military += 15;
+        updateRank();
+      }
+    }
+
+    function developNukes() {
+      const userCountry = document.getElementById('country-name').value;
+      worldTension += 15;
+      addNewsItem(`${userCountry} has started a nuclear weapons program!`, 'critical');
+    }
+
+    function sendAid() {
+      const targetCountry = prompt('Enter the name of the country to send aid to:');
+      if (targetCountry && relationships[targetCountry]) {
+        const userCountry = document.getElementById('country-name').value;
+        relationships[userCountry][targetCountry] += 20;
+        relationships[targetCountry][userCountry] += 20;
+        addNewsItem(`${userCountry} has sent humanitarian aid to ${targetCountry}!`);
+      }
+    }
+
+    function updateStats(stats) {
+      document.getElementById('population').textContent = `${stats.population.toFixed(1)}M`;
+      document.getElementById('gdp').textContent = `$${stats.gdp.toFixed(1)}B`;
+      document.getElementById('military').textContent = stats.military;
+      updateTraits();
+      updateRank();
+    }
+
+    function updateTraits() {
+      const statsDiv = document.querySelector('.stats');
+      const traitsSection = document.getElementById('traits-section') || document.createElement('div');
+      traitsSection.id = 'traits-section';
+      traitsSection.innerHTML = `
+        <h3>National Traits</h3>
+        <div class="stat-item">
+          <span>Stability:</span>
+          <span>${countryTraits.stability}%</span>
+        </div>
+        <div class="stat-item">
+          <span>Global Influence:</span>
+          <span>${countryTraits.influence}%</span>
+        </div>
+        <div class="stat-item">
+          <span>Technology Level:</span>
+          <span>${countryTraits.technology}%</span>
+        </div>
+      `;
+      if (!document.getElementById('traits-section')) {
+        statsDiv.appendChild(traitsSection);
+      }
+    }
+
+    function addNewsItem(text, type = 'normal', fullArticle = null) {
+      const timestamp = new Date().toLocaleTimeString();
+      const article = {
+        id: `news-${Date.now()}`,
+        timestamp,
+        title: text,
+        content: fullArticle || text,
+        type,
+        reactions: {
+          likes: 0,
+          shares: 0,
+          comments: []
+        }
+      };
+      newsArticles.unshift(article);
+      if (newsArticles.length > 50) newsArticles.pop();
+      const newsItem = document.createElement('div');
+      newsItem.className = `news-article ${type}`;
+      newsItem.onclick = () => showFullArticle(article);
+      const importance = type === 'critical' ? '<span class="breaking-news">BREAKING NEWS</span>' : '';
+      newsItem.innerHTML = `
+        <div class="news-header">
+          ${importance}
+          <div class="timestamp">${timestamp}</div>
+        </div>
+        <h4>${text}</h4>
+        <div class="preview">${(fullArticle || text).substring(0, 100)}...</div>
+        <div class="news-footer">
+          <span class="reactions">
+            <button onclick="reactToNews('${article.id}', 'like')">👍 ${article.reactions.likes}</button>
+            <button onclick="reactToNews('${article.id}', 'share')">🔄 ${article.reactions.shares}</button>
+          </span>
+        </div>
+      `;
+      const newsFeed = document.getElementById('news-feed');
+      if (newsFeed) {
+        newsFeed.insertBefore(newsItem, newsFeed.firstChild);
+        if (type === 'critical') {
+          newsItem.style.animation = 'pulse 2s infinite';
+        }
+      }
+    }
+
+    function showFullArticle(article) {
+      const backdrop = document.createElement('div');
+      backdrop.className = 'modal-backdrop';
+      const modal = document.createElement('div');
+      modal.className = 'news-modal';
+      modal.innerHTML = `
+        <button class="close-btn">&times;</button>
+        <h2>${article.title}</h2>
+        <div class="timestamp">${article.timestamp}</div>
+        <div class="article-content">
+          <p>${article.content}</p>
+        </div>
+      `;
+      document.body.appendChild(backdrop);
+      document.body.appendChild(modal);
+      const closeModal = () => {
+        document.body.removeChild(backdrop);
+        document.body.removeChild(modal);
+      };
+      backdrop.onclick = closeModal;
+      modal.querySelector('.close-btn').onclick = closeModal;
+    }
+
+    function declareWarBetween(country1, country2) {
+      warStatus[`${country1}-${country2}`] = true;
+      relationships[country1][country2] = -100;
+      relationships[country2][country1] = -100;
+      worldTension += 25;
+      warEvents.wars[`${country1}-${country2}`] = {
+        startTime: Date.now(),
+        participants: {
+          [country1]: {
+            allies: militaryActions.allies.filter(ally => relationships[ally][country1] > 30),
+            occupiedTerritories: []
+          },
+          [country2]: {
+            allies: Object.keys(relationships[country2]).filter(ally => relationships[ally][country2] > 30 && ally !== country1),
+            occupiedTerritories: []
+          }
+        }
+      };
+      if (["United States", "Russia", "China", "North Korea"].includes(country1) && Math.random() < 0.1) {
+        const article = newsTemplates.nuclear(country1, country2);
+        addNewsItem(article.title, article.type, article.content);
+        worldTension = 100;
+      } else {
+        const article = newsTemplates.war(country1, country2);
+        addNewsItem(article.title, article.type, article.content);
+      }
+      updateWorldTension();
+    }
+
+    function restoreEmpire(country, empireName) {
+      const article = newsTemplates.empire(country, empireName);
+      addNewsItem(article.title, article.type, article.content);
+      worldTension += 30;
+      Object.keys(relationships).forEach(otherCountry => {
+        if (otherCountry !== country) {
+          relationships[country][otherCountry] -= 30;
+          relationships[otherCountry][country] -= 30;
+        }
+      });
+      if (country === document.getElementById('country-name').value) {
+        countryPower.influence += 20;
+        countryPower.military += 15;
+        updateRank();
+      }
+      updateWorldTension();
+    }
+
+    function generateDiplomaticEvent() {
+      const countries = Object.keys(relationships);
+      const country1 = countries[Math.floor(Math.random() * countries.length)];
+      let country2 = countries[Math.floor(Math.random() * countries.length)];
+      while (country1 === country2) {
+        country2 = countries[Math.floor(Math.random() * countries.length)];
+      }
+      const actions = ['suspends diplomatic relations', 'proposes new trade agreement', 'strengthens military cooperation', 'disputes border claims'];
+      const action = actions[Math.floor(Math.random() * actions.length)];
+      const article = newsTemplates.diplomatic(country1, country2, action);
+      addNewsItem(article.title, article.type, article.content);
+    }
+
+    function initializeRelationships() {
+      const countries = ["United States", "Canada", "Mexico", "Russia", "Germany", "Turkey", "France", "United Kingdom", "Japan", "China", "South Korea", "North Korea", "Brazil", "Greenland", "New Zealand", "Vietnam", "Ukraine", "England", "Sweden", "Argentina", "Nepal", "Malaysia", "Georgia"];
+      countries.forEach(country1 => {
+        relationships[country1] = {};
+        countries.forEach(country2 => {
+          if (country1 !== country2) {
+            relationships[country1][country2] = getInitialRelationship(country1, country2);
+          }
+        });
+      });
+    }
+
+    function getInitialRelationship(country1, country2) {
+      if (country1 === "United States" && ["United Kingdom", "Canada"].includes(country2) || country2 === "United States" && ["United Kingdom", "Canada"].includes(country1)) {
+        return 75;
+      }
+      if (country1 === "North Korea" && ["United States", "South Korea"].includes(country2) || country2 === "North Korea" && ["United States", "South Korea"].includes(country1)) {
+        return -75;
+      }
+      if (country1 === "Russia" && country2 === "Ukraine" || country1 === "Ukraine" && country2 === "Russia") {
+        return -90;
+      }
+      if (country1 === "England" && country2 === "United Kingdom" || country1 === "United Kingdom" && country2 === "England") {
+        return 90;
+      }
+      return 0;
+    }
+
+    function simulateAICountries() {
+      setInterval(() => {
+        const chance = Math.random();
+        worldTension += (Math.random() - 0.5) * 5;
+        updateWorldTension();
+        for (const [level, data] of Object.entries(tensionEffects)) {
+          if (worldTension >= data.range[0] && worldTension <= data.range[1]) {
+            if (Math.random() < data.eventChance) {
+              generateConflict();
+            }
+            break;
+          }
+        }
+        if (chance < 0.1) {
+          generateDiplomaticEvent();
+        }
+        if (chance < 0.05) {
+          checkEmpireRestoration();
+        }
+      }, 10000);
+      setInterval(() => {
+        Object.keys(warEvents.wars).forEach(warKey => {
+          const [country1, country2] = warKey.split('-');
+          const war = warEvents.wars[warKey];
+          const chance = Math.random();
+          if (chance < 0.1 && !warEvents.peaceOffers[warKey]) {
+            const offeringCountry = Math.random() < 0.5 ? country1 : country2;
+            const receivingCountry = offeringCountry === country1 ? country2 : country1;
+            warEvents.peaceOffers[warKey] = offeringCountry;
+            const article = newsTemplates.peaceOffer(offeringCountry, receivingCountry);
+            addNewsItem(article.title, article.type, article.content);
+          }
+          if (chance < 0.15) {
+            const occupier = Math.random() < 0.5 ? country1 : country2;
+            const occupied = occupier === country1 ? country2 : country1;
+            const territory = `Region ${Math.floor(Math.random() * 5) + 1}`;
+            war.participants[occupier].occupiedTerritories.push({
+              territory,
+              takenFrom: occupied
+            });
+            const article = newsTemplates.territoryOccupied(occupier, occupied, territory);
+            addNewsItem(article.title, article.type, article.content);
+          }
+          if (chance < 0.05 || war.participants[country1].occupiedTerritories.length > 3 || war.participants[country2].occupiedTerritories.length > 3) {
+            const victor = war.participants[country1].occupiedTerritories.length > war.participants[country2].occupiedTerritories.length ? country1 : country2;
+            const article = newsTemplates.warEnd(country1, country2, victor);
+            addNewsItem(article.title, article.type, article.content);
+            war.participants[victor === country1 ? country2 : country1].allies.forEach(ally => {
+              const allyArticle = newsTemplates.allyDefeated(ally, victor);
+              addNewsItem(allyArticle.title, allyArticle.type, allyArticle.content);
+            });
+            delete warEvents.wars[warKey];
+            delete warEvents.peaceOffers[warKey];
+            warStatus[warKey] = false;
+            relationships[country1][country2] = -50;
+            relationships[country2][country1] = -50;
+            worldTension -= 10;
+          }
+        });
+      }, 15000);
+    }
+
+    function generateConflict() {
+      const countries = Object.keys(relationships);
+      const country1 = countries[Math.floor(Math.random() * countries.length)];
+      let country2 = countries[Math.floor(Math.random() * countries.length)];
+      while (country1 === country2 || relationships[country1][country2] > 0) {
+        country2 = countries[Math.floor(Math.random() * countries.length)];
+      }
+      const tensionThreshold = worldTension / 100;
+      const conflictChance = Math.random();
+      if (conflictChance < tensionThreshold) {
+        if (conflictChance < tensionThreshold * 0.3) {
+          declareWarBetween(country1, country2);
+        } else {
+          const conflictTypes = [() => addNewsItem(`${country1} accuses ${country2} of espionage!`), () => addNewsItem(`${country1} imposes economic sanctions on ${country2}`), () => addNewsItem(`${country1} expels diplomats from ${country2}`), () => addNewsItem(`Border skirmish reported between ${country1} and ${country2}`)];
+          const conflict = conflictTypes[Math.floor(Math.random() * conflictTypes.length)];
+          conflict();
+          relationships[country1][country2] -= 15;
+          relationships[country2][country1] -= 15;
+          worldTension += 5;
+        }
+      }
+      updateWorldTension();
+    }
+
+    function checkEmpireRestoration() {
+      const empireChances = {
+        "Japan": {
+          name: "Japanese Empire",
+          chance: 0.2,
+          condition: () => relationships["Japan"]["United States"] < -30
+        },
+        "Russia": {
+          name: "Soviet Union",
+          chance: 0.2,
+          condition: () => worldTension > 60
+        }
+      };
+      for (let [country, data] of Object.entries(empireChances)) {
+        if (Math.random() < data.chance && data.condition()) {
+          restoreEmpire(country, data.name);
+        }
+      }
+    }
+
+    function updateWorldTension() {
+      const tensionMeter = document.querySelector('.tension-fill');
+      const tensionLabel = document.querySelector('.tension-label');
+      const tensionStatus = document.querySelector('.tension-status');
+      if (!tensionMeter || !tensionLabel || !tensionStatus) return;
+      worldTension = Math.max(0, Math.min(100, worldTension));
+      tensionMeter.style.width = `${worldTension}%`;
+      tensionLabel.textContent = `${Math.round(worldTension)}%`;
+      let currentLevel;
+      for (const [level, data] of Object.entries(tensionEffects)) {
+        if (worldTension >= data.range[0] && worldTension <= data.range[1]) {
+          currentLevel = level;
+          break;
+        }
+      }
+      tensionStatus.className = `tension-status ${currentLevel}`;
+      tensionStatus.textContent = tensionEffects[currentLevel].description;
+      tensionMeter.classList.toggle('critical', worldTension >= 75);
+      if (worldTension >= 100) {
+        addNewsItem("GLOBAL CRISIS: World tension has reached critical levels!", "critical", "The international community stands on the brink of total war as global tensions reach unprecedented levels. " + "Multiple nations are mobilizing their armed forces and civilian populations are being advised to prepare for potential conflict. " + "Emergency meetings of the UN Security Council have been called.");
+      }
+    }
+
+    function showRankProgress(rankDisplay) {
+      const powerScore = Math.min(100, Math.max(0, countryPower.influence * 0.3 + countryPower.military * 0.3 + countryPower.territory * 0.2 + countryPower.allies * 20));
+      let currentRank;
+      let nextRank;
+      for (const [rank, data] of Object.entries(countryRanks)) {
+        if (powerScore >= data.threshold) {
+          currentRank = data;
+        } else if (!nextRank) {
+          nextRank = data;
+          break;
+        }
+      }
+      if (!currentRank) {
+        currentRank = countryRanks.SETTLEMENT;
+      }
+      const progressToNext = nextRank ? (powerScore - currentRank.threshold) / (nextRank.threshold - currentRank.threshold) * 100 : 100;
+      return `
+        <div class="rank-title">
+          <span>${currentRank.icon} ${currentRank.name}</span>
+          ${nextRank ? `<span class="next-rank">Next: ${nextRank.icon} ${nextRank.name}</span>` : ''}
+        </div>
+        <div class="rank-progress">
+          <div class="rank-bar" style="width: ${progressToNext}%"></div>
+        </div>
+        <div class="rank-benefits">
+          <h4>Current Benefits:</h4>
+          <ul>
+            ${currentRank.benefits.map(benefit => `<li>${benefit}</li>`).join('')}
+          </ul>
+        </div>
+      `;
+    }
+
+    function reactToNews(id, reaction) {
+      const article = newsArticles.find(a => a.id === id);
+      if (article) {
+        if (reaction === 'like') {
+          article.reactions.likes += 1;
+        } else if (reaction === 'share') {
+          article.reactions.shares += 1;
+        }
+        const newsItem = document.querySelector(`.news-article#${id}`);
+        if (newsItem) {
+          newsItem.querySelector('.reactions').innerHTML = `
+            <button onclick="reactToNews('${id}', 'like')">👍 ${article.reactions.likes}</button>
+            <button onclick="reactToNews('${id}', 'share')">🔄 ${article.reactions.shares}</button>
+          `;
+        }
+      }
+    }
+
+    function updateResources() {
+      const baseProduction = {
+        food: 10 + (countryPower.territory * 0.5),
+        minerals: 5 + (countryPower.territory * 0.3),
+        energy: 8 + (countryPower.technology * 0.4),
+        trade: 3 + (countryPower.influence * 0.6)
+      };
+
+      // Apply research bonuses
+      gameState.research.completed.forEach(tech => {
+        const effects = researchTechs[tech].effects;
+        for (const resource in effects) {
+          if(baseProduction[resource]) {
+            baseProduction[resource] *= effects[resource];
+          }
+        }
+      });
+
+      // Update resources and trends
+      for (const resource in baseProduction) {
+        gameState.resources[resource] += baseProduction[resource];
+        gameState.resources.trends[resource] = baseProduction[resource];
+        
+        // Update UI
+        document.getElementById(`${resource}-value`).textContent = 
+          Math.floor(gameState.resources[resource]);
+        document.getElementById(`${resource}-trend`).textContent = 
+          `+${baseProduction[resource].toFixed(1)}/day`;
+      }
+    }
+
+    function trainUnits(type) {
+      const costs = {
+        infantry: {minerals: 10, energy: 5},
+        armor: {minerals: 30, energy: 15},
+        air: {minerals: 40, energy: 25},
+        navy: {minerals: 50, energy: 35}
+      };
+
+      const cost = costs[type];
+      
+      // Check resources
+      for (const resource in cost) {
+        if (gameState.resources[resource] < cost[resource]) {
+          showAlert(`Not enough ${resource} to train ${type}`);
+          return;
+        }
+      }
+
+      // Deduct resources
+      for (const resource in cost) {
+        gameState.resources[resource] -= cost[resource];
+      }
+
+      // Start training
+      if (!gameState.military.training[type]) {
+        gameState.military.training[type] = {
+          amount: 1,
+          progress: 0,
+          total: type === 'infantry' ? 5 : 
+                 type === 'armor' ? 10 :
+                 type === 'air' ? 15 : 20
+        };
+      }
+
+      updateMilitaryUI();
+    }
+
+    function gameLoop() {
+      // Update time
+      gameState.time.day++;
+      if (gameState.time.day > 30) {
+        gameState.time.day = 1;
+        gameState.time.month++;
+        if (gameState.time.month > 12) {
+          gameState.time.month = 1;
+          gameState.time.year++;
+        }
+      }
+
+      // Update resources
+      updateResources();
+
+      // Progress research
+      if (gameState.research.active) {
+        const tech = researchTechs[gameState.research.active];
+        gameState.research.points++;
+        if (gameState.research.points >= tech.cost) {
+          gameState.research.completed.push(gameState.research.active);
+          gameState.research.active = null;
+          gameState.research.points = 0;
+          checkAchievements();
+        }
+      }
+
+      // Progress military training
+      for (const type in gameState.military.training) {
+        const training = gameState.military.training[type];
+        training.progress++;
+        if (training.progress >= training.total) {
+          gameState.military[type] += training.amount;
+          delete gameState.military.training[type];
+          updateMilitaryUI();
+        }
+      }
+
+      // Update UI
+      updateTimeDisplay();
+      updateCultureStats();
+      
+      requestAnimationFrame(gameLoop);
+    }
+
+    function updateMilitaryUI() {
+      const militaryPower = {
+        infantry: 1,
+        armor: 3,
+        air: 4,
+        navy: 5
+      };
+
+      let totalPower = 0;
+      for (const type in gameState.military) {
+        if (type !== 'training') {
+          totalPower += gameState.military[type] * militaryPower[type];
+        }
+      }
+
+      document.getElementById('military').textContent = totalPower;
+      
+      // Update training progress bars
+      for (const type in gameState.military.training) {
+        const training = gameState.military.training[type];
+        const progress = (training.progress / training.total) * 100;
+        
+        let progressBar = document.querySelector(`.training-${type}`);
+        if (!progressBar) {
+          progressBar = document.createElement('div');
+          progressBar.className = `training-${type} training-progress`;
+          document.querySelector('.unit-type').appendChild(progressBar);
+        }
+        progressBar.style.width = `${progress}%`;
+      }
+    }
+
+    function checkAchievements() {
+      const countryName = document.getElementById('country-name').value;
+      
+      // Check military achievement
+      const militaryPower = parseInt(document.getElementById('military').textContent);
+      if (militaryPower >= 1000 && !gameState.achievements.unlocked.includes('militaryMight')) {
+        unlockAchievement('militaryMight');
+      }
+
+      // Check peace achievement
+      const atWar = Object.values(warStatus).some(status => status === true);
+      if (!atWar && worldTension < 25 && !gameState.achievements.unlocked.includes('peacekeeper')) {
+        unlockAchievement('peacekeeper');
+      }
+
+      updateAchievementsUI();
+    }
+
+    function unlockAchievement(id) {
+      if (!gameState.achievements.unlocked.includes(id)) {
+        gameState.achievements.unlocked.push(id);
+        const achievement = achievements[id];
+        
+        showAlert(`Achievement Unlocked: ${achievement.name}!`);
+        
+        const achievementNotification = document.createElement('div');
+        achievementNotification.className = 'achievement-notification';
+        achievementNotification.innerHTML = `
+          <div class="achievement-icon">${achievement.icon}</div>
+          <div class="achievement-details">
+            <h4>${achievement.name}</h4>
+            <p>${achievement.description}</p>
+          </div>
+        `;
+        
+        document.body.appendChild(achievementNotification);
+        setTimeout(() => achievementNotification.remove(), 5000);
+      }
+    }
+
+    function updateTimeDisplay() {
+      // Update time display
+    }
+
+    function updateCultureStats() {
+      // Update culture stats
+    }
+
+    function updateAchievementsUI() {
+      // Update achievements UI
+    }
+
+    function showAlert(message) {
+      const alertBox = document.getElementById('alert-box');
+      alertBox.textContent = message;
+      alertBox.style.display = 'block';
+      setTimeout(() => {
+        alertBox.style.display = 'none';
+      }, 3000);
+    }
+
+    // Start game systems
+    gameLoop();
+    
+    function initializeMap() {
+      try {
+        map = L.map('map').setView([20, 0], 2);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: ' OpenStreetMap contributors'
+        }).addTo(map);
+        const realCountries = {
+          type: "FeatureCollection",
+          features: [{
+            type: "Feature",
+            properties: {
+              name: "Afghanistan",
+              government: "republic",
+              population: 38.9,
+              gdp: 19.8,
+              military: 45
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[61, 35], [62, 35], [63, 36], [64, 36], [65, 37], [66, 37], [67, 36], [68, 36], [69, 37], [70, 37], [71, 36], [72, 36], [73, 37], [74, 37], [75, 36], [74, 35], [73, 34], [72, 34], [71, 35], [70, 35], [69, 34], [68, 34], [67, 35], [66, 35], [65, 34], [64, 34], [63, 35], [62, 35], [61, 34], [60, 34], [61, 35]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "Albania",
+              government: "parliamentary republic",
+              population: 3,
+              gdp: 14.34,
+              military: 25
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[19, 42], [20, 42], [21, 42], [20, 41], [19, 41], [19, 42]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "United Arab Emirates",
+              government: "absolute monarchy",
+              population: 9.541,
+              gdp: 421.142,
+              military: 59
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[51.45, 24.85], [52.74, 24.85], [52.74, 26.42], [51.45, 26.42], [51.45, 24.85]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "United States of America",
+              government: "federal presidential republic",
+              population: 331.9,
+              gdp: 22940,
+              military: 100
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[-125, 48], [-123, 48], [-120, 48], [-117, 48], [-115, 48], [-110, 48], [-105, 48], [-100, 48], [-95, 48], [-90, 48], [-85, 48], [-80, 48], [-75, 48], [-70, 48], [-67, 45], [-70, 43], [-75, 42], [-80, 40], [-85, 35], [-90, 30], [-95, 30], [-100, 30], [-105, 32], [-110, 32], [-115, 35], [-120, 40], [-125, 45], [-125, 48]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "Canada",
+              government: "federal parliamentary democracy",
+              population: 38.25,
+              gdp: 1988,
+              military: 72
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[-140, 70], [-130, 70], [-120, 70], [-110, 70], [-100, 70], [-90, 70], [-80, 70], [-70, 70], [-60, 60], [-70, 55], [-80, 50], [-90, 50], [-100, 50], [-110, 50], [-120, 50], [-130, 55], [-140, 60], [-140, 70]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "Mexico",
+              government: "federal presidential republic",
+              population: 128.9,
+              gdp: 1293,
+              military: 58
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[-120, 30], [-110, 30], [-100, 30], [-90, 30], [-85, 20], [-90, 15], [-95, 15], [-100, 20], [-105, 20], [-110, 25], [-115, 25], [-120, 30]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "Russia",
+              government: "federal semi-presidential republic",
+              population: 144.1,
+              gdp: 1778,
+              military: 95
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[30, 70], [40, 70], [50, 70], [60, 70], [70, 70], [80, 70], [90, 70], [100, 70], [110, 70], [120, 70], [130, 70], [140, 70], [150, 70], [160, 70], [170, 70], [180, 70], [170, 60], [160, 50], [150, 50], [140, 50], [130, 50], [120, 50], [110, 50], [100, 50], [90, 50], [80, 50], [70, 50], [60, 50], [50, 50], [40, 50], [30, 50], [30, 70]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "Germany",
+              government: "federal parliamentary republic",
+              population: 83.2,
+              gdp: 4223,
+              military: 80
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[6, 54], [7, 54], [8, 54], [9, 54], [10, 54], [11, 54], [12, 54], [13, 54], [14, 54], [15, 54], [14, 51], [13, 48], [12, 48], [11, 48], [10, 48], [9, 48], [8, 48], [7, 48], [6, 48], [6, 54]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "Turkey",
+              government: "presidential republic",
+              population: 84.3,
+              gdp: 720,
+              military: 65
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[26, 42], [28, 42], [30, 42], [32, 42], [34, 42], [36, 42], [38, 42], [40, 42], [42, 42], [44, 38], [42, 36], [40, 36], [38, 36], [36, 36], [34, 36], [32, 36], [30, 36], [28, 36], [26, 36], [26, 42]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "France",
+              government: "unitary semi-presidential republic",
+              population: 67.39,
+              gdp: 2940,
+              military: 75
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[-4, 51], [-2, 51], [0, 51], [2, 51], [4, 51], [6, 51], [8, 51], [6, 48], [4, 46], [2, 44], [0, 44], [-2, 46], [-4, 48], [-4, 51]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "United Kingdom",
+              government: "unitary parliamentary democracy",
+              population: 67.22,
+              gdp: 3131,
+              military: 78
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[-5, 58], [-3, 58], [-1, 58], [1, 58], [-1, 54], [-3, 52], [-5, 52], [-5, 58]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "Japan",
+              government: "unitary parliamentary constitutional monarchy",
+              population: 125.36,
+              gdp: 5103,
+              military: 70
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[130, 45], [132, 45], [134, 45], [136, 45], [138, 45], [140, 45], [142, 45], [140, 42], [138, 39], [136, 36], [134, 33], [132, 36], [130, 39], [130, 45]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "China",
+              government: "unitary one-party socialist republic",
+              population: 1402,
+              gdp: 17734,
+              military: 98
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[75, 45], [85, 45], [95, 45], [105, 45], [115, 45], [125, 45], [135, 45], [135, 35], [125, 30], [115, 25], [105, 25], [95, 25], [85, 30], [75, 35], [75, 45]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "South Korea",
+              government: "unitary presidential constitutional republic",
+              population: 51.74,
+              gdp: 1798,
+              military: 65
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[126, 38], [128, 38], [130, 38], [128, 36], [126, 36], [126, 38]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "North Korea",
+              government: "unitary one-party socialist state",
+              population: 25.55,
+              gdp: 32,
+              military: 50
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[124, 43], [126, 43], [128, 43], [130, 43], [128, 41], [126, 41], [124, 41], [124, 43]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "Brazil",
+              government: "federal presidential republic",
+              population: 214.3,
+              gdp: 1608,
+              military: 55
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[-73.9, 5.0], [-55.0, 5.0], [-35.0, -5.0], [-38.0, -20.0], [-53.0, -33.0], [-73.9, -18.0], [-73.9, 5.0]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "Greenland",
+              government: "parliamentary democracy",
+              population: 0.056,
+              gdp: 3.1,
+              military: 10
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[-73.0, 78.0], [-37.0, 83.0], [-18.0, 71.0], [-44.0, 60.0], [-73.0, 78.0]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "New Zealand",
+              government: "unitary parliamentary democracy",
+              population: 5.1,
+              gdp: 247,
+              military: 35
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[166.5, -46.0], [172.0, -40.5], [178.5, -37.0], [174.0, -41.0], [168.0, -46.5], [166.5, -46.0]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "Vietnam",
+              government: "socialist republic",
+              population: 97.3,
+              gdp: 366,
+              military: 45
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[102.1, 22.5], [105.5, 23.3], [109.2, 21.0], [109.4, 10.0], [104.5, 8.6], [102.1, 22.5]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "Ukraine",
+              government: "semi-presidential representative democracy",
+              population: 44.13,
+              gdp: 155.5,
+              military: 55
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[22, 48], [22, 51], [28, 51], [32, 51], [38, 51], [40, 48], [38, 45], [32, 45], [28, 45], [22, 48]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "England",
+              government: "constitutional monarchy",
+              population: 56.5,
+              gdp: 2850,
+              military: 70
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[-5, 50], [-2, 50], [0, 50], [2, 52], [0, 54], [-2, 54], [-5, 52], [-5, 50]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "Sweden",
+              government: "parliamentary democracy",
+              population: 10.4,
+              gdp: 627,
+              military: 45
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[12, 55], [14, 55], [18, 55], [20, 60], [18, 65], [14, 68], [12, 65], [10, 60], [12, 55]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "Argentina",
+              government: "federal presidential republic",
+              population: 45.8,
+              gdp: 487,
+              military: 40
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[-73, -55], [-65, -55], [-60, -50], [-55, -35], [-65, -22], [-70, -30], [-73, -40], [-73, -55]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "Nepal",
+              government: "federal parliamentary republic",
+              population: 29.1,
+              gdp: 36,
+              military: 25
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[80, 30], [82, 30], [84, 30], [86, 30], [88, 30], [88, 28], [86, 28], [84, 28], [82, 28], [80, 28], [80, 30]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "Malaysia",
+              government: "federal constitutional monarchy",
+              population: 32.7,
+              gdp: 372,
+              military: 35
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[100, 6], [102, 6], [104, 6], [106, 4], [104, 2], [102, 2], [100, 2], [98, 4], [100, 6]]]
+            }
+          }, {
+            type: "Feature",
+            properties: {
+              name: "Georgia",
+              government: "unitary parliamentary republic",
+              population: 3.7,
+              gdp: 15.8,
+              military: 20
+            },
+            geometry: {
+              type: "Polygon",
+              coordinates: [[[40, 42], [42, 42], [44, 42], [46, 42], [46, 41], [44, 41], [42, 41], [40, 41], [40, 42]]]
+            }
+          }]
+        };
+        L.geoJSON(realCountries, {
+          style: function () {
+            return {
+              color: '#3388ff',
+              weight: 2,
+              opacity: 0.65,
+              fillOpacity: 0.2
+            };
+          },
+          onEachFeature: function (feature, layer) {
+            if (feature.properties && feature.properties.name) {
+              layer.bindPopup(`
+                <b>${feature.properties.name}</b><br>
+                Government: ${feature.properties.government}<br>
+                Population: ${feature.properties.population}M<br>
+                GDP: $${feature.properties.gdp}B<br>
+                Military Power: ${feature.properties.military}
+              `);
+            }
+          }
+        }).addTo(map);
+      } catch (error) {
+        console.error("Map initialization error:", error);
+        showAlert("Error initializing map");
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+      initializeMap();
+    });
+    
+    const remixNotice = document.getElementById('remix-notice');
+    setTimeout(() => {
+      if (remixNotice) {
+        remixNotice.remove();
+      }
+    }, 5000);
+    
+    initializeRelationships();
+    simulateAICountries();
+  </script>
+</body>
+</html>
